@@ -9,7 +9,7 @@
                 "requester_email": "jedi_master@hotmail.co.th",
                 "channel": "Facebook"
             },
-            "status": "pending",
+            "status": "accepted",
             "create_timestamp": "Sat Mar 12 2022 14:04:49",
             "latest_update_timestamp": "Sat Mar 12 2022 14:04:49"
         },
@@ -37,7 +37,7 @@
                 "requester_email": "keroro@hotmail.com",
                 "channel": "Web Form"
             },
-            "status": "pending",
+            "status": "rejected",
             "create_timestamp": "Sat Mar 12 2022 14:06:40",
             "latest_update_timestamp": "Sat Mar 12 2022 14:09:21"
         },
@@ -65,7 +65,7 @@
                 "requester_email": "vermillion@gmail.com",
                 "channel": "Line"
             },
-            "status": "pending",
+            "status": "rejected",
             "create_timestamp": "Sat Mar 12 2022 14:08:39",
             "latest_update_timestamp": "Sat Mar 12 2022 14:08:39"
         }

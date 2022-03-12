@@ -14,29 +14,39 @@ app.get("/", (req, res) => {
 });
 
 app.get("/ticket/all", (req, res) => {
-    const sort = verifySortParams(req.query.sort);
+    let status_sort = verifySortParams(req.query.status_sort);
+    let update_sort = verifySortParams(req.query.update_sort);
 
-    // sort only timestamp
-    // sort status before sort timestamp
-
-    // Verify sort is correct format
-    if (sort != undefined) {
-        const jsonData = readJSONFile('ticket.json'); // Read file
-        var status = jsonData['tickets'].length > 0,
-            message = status ? `${jsonData['tickets'].length} ticket(s)` : "Ticket is empty";
-        // Sort only timestamp
-        if (status && sort == 'default') {
-            var tickets = groupTicket(jsonData['tickets'], 'status'), // Sort tickets by status
-                tickets = sortTicket(tickets, 'latest_update_timestamp', 'desc'.toLowerCase()); // Sort tickets by latest_update_timestamp
-        }
-        // Sort both status and timestamp
-        else {
-            var tickets = groupTicket(jsonData['tickets'], 'status', sort);
-        }
-    } else {
+    if (status_sort == undefined || update_sort == undefined) {
         var tickets = null,
             status = false,
             message = `Invalid information`;
+    } else {
+        const jsonData = readJSONFile('ticket.json'); // Read file
+        var status = jsonData['tickets'].length > 0,
+            message = status ? `${jsonData['tickets'].length} ticket(s)` : "Ticket is empty",
+            tickets = jsonData['tickets'];
+
+        // Specific attribute sort
+        if (status_sort !== "default" || update_sort !== 'default') {
+            // Sort status, update
+            if (status_sort !== "default" && update_sort !== "default") {
+                console.log('status and update')
+                tickets = groupTicket(tickets, 'status', status_sort, update_sort);
+            }
+
+            // Sort only status
+            else if (status_sort !== "default") {
+                console.log('status')
+                tickets = groupTicket(tickets, 'status', status_sort);
+            }
+
+            // Sort only update
+            else {
+                console.log('update')
+                tickets = sortTicket(tickets, 'latest_update_timestamp', update_sort);
+            }
+        }
     }
 
     const response = {
@@ -49,14 +59,11 @@ app.get("/ticket/all", (req, res) => {
 });
 
 app.get("/ticket/filter/:status", (req, res) => {
-    // Read file
-    const jsonData = readJSONFile('ticket.json');
-
+    const jsonData = readJSONFile('ticket.json'); // Read file
     const statusFilter = req.params.status; // pending, accepted, resolved, rejected
+    const sort = verifySortParams(req.query.sort).replace("default", "desc"); // DEFAULT desc
 
-    const sort = verifySortParams(req.query.sort).replace("default", "desc");
-
-    // Sort by latest_update DEFAULT desc
+    // Sort by latest_update
     if (sort != undefined) {
         var tickets = jsonData['tickets'].filter(element => element['status'] == statusFilter), // Filter ticket by status
             status = tickets != undefined && tickets != null && tickets.length > 0,
@@ -279,7 +286,7 @@ function isTelNumber(tel) {
 
 function sortTicket(tickets, keySort, order) {
     const dirModifier = order === 'asc' ? 1 : -1;
-    tickets.sort(function(a, b) {
+    tickets.sort((a, b) => {
         let valueA = keySort.includes('timestamp') ? new Date(a[keySort]) : a[keySort],
             valueB = keySort.includes('timestamp') ? new Date(b[keySort]) : b[keySort];
         return valueA > valueB ? (1 * dirModifier) : (-1 * dirModifier);
@@ -287,9 +294,9 @@ function sortTicket(tickets, keySort, order) {
     return tickets;
 }
 
-function groupTicket(tickets, key, sortSubGroup = undefined) {
+function groupTicket(tickets, key, sortGroup, sortSubGroup = undefined) {
     // { keyA: [valueA1, valueA2, ...], keyB: [valueB1, valueB2, ...], ... }
-    const resultGroup = {};
+    let resultGroup = {};
 
     for (let i = 0; i < tickets.length; i++) {
         // Create array of unique key, if it's not exist
@@ -301,11 +308,15 @@ function groupTicket(tickets, key, sortSubGroup = undefined) {
         resultGroup[tickets[i][key]].push(tickets[i])
     }
 
+    // Sort only keys [ keyA, keyB, keyC ]
+    const dirModifier = sortGroup === 'asc' ? 1 : -1;
+    const sortKey = Object.keys(resultGroup).sort((a, b) => a > b ? (1 * dirModifier) : (-1 * dirModifier));
+
     // [ valueA1, valueA2, ..., valueB1, ... ]
     const results = [];
 
     // Fetch value from array of each key into results array
-    for (let key in resultGroup) {
+    for (let key of sortKey) {
         if (sortSubGroup == undefined) {
             results.push(...resultGroup[key]);
         }
@@ -316,18 +327,3 @@ function groupTicket(tickets, key, sortSubGroup = undefined) {
     }
     return results;
 }
-
-// function groupTicket(tickets, key) {
-//     const statusGroup = uniqueValueTicket(tickets, key);
-//     const subGroupTicket = {};
-//     for (let key of statusGroup) {
-//         subGroupTicket[key] = [];
-//     }
-//     console.log(subGroupTicket);
-// }
-
-// function uniqueValueTicket(tickets, key) {
-//     return [...new Set(tickets.map(item => item[key]))];
-//     // return tickets.map(item => item[key])
-//     //     .filter((value, index, self) => self.indexOf(value) === index);
-// }
