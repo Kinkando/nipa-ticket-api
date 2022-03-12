@@ -1,0 +1,20 @@
+{
+    "name": "nipa-ticket-api",
+    "version": "1.0.0",
+    "description": "Ticket Management API (Nipa Cloud Assignment)",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node index.js",
+        "dev": "nodemon server"
+    },
+    "author": "Tanawat Yuwansiri",
+    "license": "ISC",
+    "dependencies": {
+        "email-validator": "^2.0.4",
+        "express": "^4.17.3"
+    },
+    "engines": {
+        "node": "14.16.0"
+    }
+}
