@@ -267,9 +267,23 @@ function updateTicket(ticket, request) {
 }
 
 function getTimestamp() {
-    const datetime = new Date().toString(); // get current datetime
-    const timestamp = datetime.substring(0, datetime.indexOf("GMT") - 1); // substring of GMT
-    return timestamp.trim();
+    let datetime = new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Bangkok',
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    }).replace(' 24:', ' 00:'); // get current datetime
+
+    // Iteration to replaceAll , with empty character
+    while (datetime.includes(',')) {
+        datetime = datetime.replace(',', '');
+    }
+    return datetime;
 }
 
 function setUpdate(isUpdate, ticket, request) {
