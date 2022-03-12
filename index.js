@@ -14,8 +14,8 @@ app.get("/", (req, res) => {
 });
 
 app.get("/ticket/all", (req, res) => {
-    let status_sort = verifySortParams(req.query.status_sort);
-    let update_sort = verifySortParams(req.query.update_sort);
+    let status_sort = verifySortParams(req.query.status_sort); // asc, desc, default, undefined
+    let update_sort = verifySortParams(req.query.update_sort); // asc, desc, default, undefined
 
     if (status_sort == undefined || update_sort == undefined) {
         var tickets = null,
@@ -59,20 +59,25 @@ app.get("/ticket/all", (req, res) => {
 });
 
 app.get("/ticket/filter/:status", (req, res) => {
-    const jsonData = readJSONFile('ticket.json'); // Read file
     const statusFilter = req.params.status; // pending, accepted, resolved, rejected
-    const sort = verifySortParams(req.query.sort).replace("default", "desc"); // DEFAULT desc
+    const sort = verifySortParams(req.query.sort); // asc, desc, default, undefined
 
-    // Sort by latest_update
-    if (sort != undefined) {
-        var tickets = jsonData['tickets'].filter(element => element['status'] == statusFilter), // Filter ticket by status
-            status = tickets != undefined && tickets != null && tickets.length > 0,
-            message = status ? `${statusFilter}: ${tickets.length} ticket(s)` : `No ${statusFilter} ticket was found`;
-        tickets = sortTicket(tickets, 'latest_update_timestamp', sort.toLowerCase()); // Sort tickets by latest_update_timestamp
-    } else {
+    // Wrong information params
+    if (sort == undefined) {
         var tickets = [],
             status = false,
             message = `Invalid information`;
+    } else {
+        const jsonData = readJSONFile('ticket.json'); // Read file
+
+        var tickets = jsonData['tickets'].filter(element => element['status'] == statusFilter), // Filter ticket by status
+            status = tickets != undefined && tickets != null && tickets.length > 0,
+            message = status ? `${statusFilter}: ${tickets.length} ticket(s)` : `No ${statusFilter} ticket was found`;
+
+        // Sort tickets by latest_update_timestamp
+        if (['desc', 'asc'].includes(sort)) {
+            tickets = sortTicket(tickets, 'latest_update_timestamp', sort);
+        }
     }
 
     const response = {
@@ -164,7 +169,7 @@ app.put('/ticket/update', (req, res) => {
         // not found
         if (isNone(ticket)) {
             var status = false;
-            var message = "Ticket not found";
+            var message = "Ticket was not found";
             var ticket = null;
         }
         // found ticket
