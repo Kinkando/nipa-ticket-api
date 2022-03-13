@@ -149,8 +149,6 @@ app.post("/ticket/create", (req, res) => {
 });
 
 app.put('/ticket/update', (req, res) => {
-    // Read file
-    const jsonData = readJSONFile('ticket.json');
     const id = req.query.id;
 
     // if not exist id params
@@ -159,6 +157,7 @@ app.put('/ticket/update', (req, res) => {
         var message = "Invalid ticket";
         var ticket = null;
     } else {
+        const jsonData = readJSONFile('ticket.json'); // Read file
         // find ticket by ticket id
         for (var i = 0; i < jsonData['tickets'].length; i++) {
             if (jsonData['tickets'][i]['id'] == id) {
@@ -178,15 +177,17 @@ app.put('/ticket/update', (req, res) => {
             let result = updateTicket(ticket, req.query);
             let isUpdate = result != undefined && result['isUpdate'];
 
+            // Response attribute
+            var status = isUpdate,
+                message = result == undefined ? "Invalid ticket information" :
+                isUpdate ? "Update ticket successful" : "Ticket information is not changed";
+            ticket = isUpdate ? result['data'] : null;
+
             // validate information that correct and update ticket
             if (isUpdate) {
-                ticket = result['data'];
                 jsonData['tickets'][i] = ticket;
                 writeJSONFile(jsonData, 'ticket.json'); // Overwrite file
             }
-            var status = isUpdate;
-            var message = result == undefined ? "Invalid ticket information" :
-                isUpdate ? "Update ticket successful" : "Ticket is not changed";
         }
     }
 
@@ -221,13 +222,24 @@ function verifySortParams(sort) {
 function ticketValidate(ticket) {
     return !(isNone(ticket.title) || isNone(ticket.description) ||
         isNone(ticket.name) || isNone(ticket.tel) || isNone(ticket.email) ||
-        isNone(ticket.channel) || !isTelNumber(ticket.tel) || !emailValidator.validate(ticket.email));
+        isNone(ticket.channel) || !isTelNumber(ticket.tel) ||
+        !emailValidator.validate(ticket.email) || !channelValidate(ticket.channel));
+}
+
+function channelValidate(channel) {
+    return ['Facebook', 'Line', 'Web Form'].includes(channel)
+}
+
+function statusValidate(status) {
+    return ['pending', 'accepted', 'resolved', 'rejected'].includes(status)
 }
 
 function updateTicket(ticket, request) {
-    // if invalid tel or email, but it's not None
+    // if invalid tel, email, channel or status, but it's not None
     if ((!isNone(request.tel) && !isTelNumber(request.tel)) ||
-        (!isNone(request.email) && !emailValidator.validate(request.email))) {
+        (!isNone(request.email) && !emailValidator.validate(request.email)) ||
+        (!isNone(request.channel) && !channelValidate(request.channel)) ||
+        (!isNone(request.status) && !statusValidate(request.status))) {
         return undefined;
     }
 
