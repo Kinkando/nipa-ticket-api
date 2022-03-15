@@ -1,16 +1,32 @@
 const express = require("express");
 const app = express();
 const emailValidator = require("email-validator");
-
-var fs = require("fs"); //อ่านไฟล์ json
+var fs = require("fs"); // Read file.json
 let port = process.env.PORT || 3000;
 
+// CORS policy for response from another website
+app.use(function(req, res, next) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader("Content-Type", "application/json");
+    next();
+});
+
+// Receive JSON request body with POST and PUT
+app.use(express.json());
+
 app.listen(port, () => {
-    console.log(`Example app is listening on port http://localhost:${port}`);
+    console.log(`Ticket Management API is listening on port http://localhost:${port}`);
 });
 
 app.get("/", (req, res) => {
-    res.send("Hello World");
+    return res.send({
+        message: "Welcome to ticket management api",
+        description: "This is an assignment for internship in full-stack developer department",
+        documentation: "https://kinkando.github.io/nipa-ticket-api-documentation/"
+    });
 });
 
 app.get("/ticket/all", (req, res) => {
@@ -31,19 +47,16 @@ app.get("/ticket/all", (req, res) => {
         if (status_sort !== "default" || update_sort !== 'default') {
             // Sort status, update
             if (status_sort !== "default" && update_sort !== "default") {
-                console.log('status and update')
                 tickets = groupTicket(tickets, 'status', status_sort, update_sort);
             }
 
             // Sort only status
             else if (status_sort !== "default") {
-                console.log('status')
                 tickets = groupTicket(tickets, 'status', status_sort);
             }
 
             // Sort only update
             else {
-                console.log('update')
                 tickets = sortTicket(tickets, 'latest_update_timestamp', update_sort);
             }
         }
@@ -110,20 +123,20 @@ app.post("/ticket/create", (req, res) => {
     // Generate timestamp
     const timestamp = getTimestamp();
 
-    if (ticketValidate(req.query)) {
+    if (ticketValidate(req.body)) {
         // Read file
         const jsonData = readJSONFile('ticket.json');
 
         // Generate new ticket
         var ticket = {
             id: jsonData['tickets'].length + 1,
-            title: req.query.title.trim(),
-            description: req.query.description.trim(),
+            title: req.body.title.trim(),
+            description: req.body.description.trim(),
             contact_information: {
-                requester_name: req.query.name.trim(),
-                requester_tel: req.query.tel,
-                requester_email: req.query.email,
-                channel: req.query.channel.trim(),
+                requester_name: req.body.name.trim(),
+                requester_tel: req.body.tel,
+                requester_email: req.body.email,
+                channel: req.body.channel.trim(),
             },
             status: "pending",
             create_timestamp: timestamp,
@@ -149,7 +162,7 @@ app.post("/ticket/create", (req, res) => {
 });
 
 app.put('/ticket/update', (req, res) => {
-    const id = req.query.id;
+    const id = req.body.id;
 
     // if not exist id params
     if (isNone(id) || isNaN(id)) {
@@ -174,7 +187,7 @@ app.put('/ticket/update', (req, res) => {
         // found ticket
         else {
             // update ticket
-            let result = updateTicket(ticket, req.query);
+            let result = updateTicket(ticket, req.body);
             let isUpdate = result != undefined && result['isUpdate'];
 
             // Response attribute
